@@ -54,7 +54,16 @@ def take_action(state, epsilon):
    if random.random() > epsilon:
         return actions[np.argmax(q_table[state])]
    else:
-        return random.choice(actions)
+        possible_actions = []
+        if state < size*(size-1):
+            possible_actions.append('down')
+        if state >= size:
+            possible_actions.append('up')
+        if state % size != 0:
+            possible_actions.append('left')
+        if state % size != size-1:
+            possible_actions.append('right')
+        return random.choice(possible_actions)
    
 def update_q_table(state, action, reward, next_state):  
     q_table[state][actions.index(action)] += alpha * (reward + gamma * np.max(q_table[next_state]) - q_table[state][actions.index(action)])
