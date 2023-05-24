@@ -1,27 +1,32 @@
 import pygame
 import random
 import numpy as np
-np.random.seed(0)
+#np.random.seed(4)
 #random.seed(0)
 size = 4
 width = size * 50
 height = size * 50
 win = pygame.display.set_mode((width, height))
-fps = 60
+fps = 120
 
-def create_grid(size):
-    grid = np.random.choice([0, 1], (size,size), p=[.2, .8])
-    goal_x = random.randint(0, size-1)
-    goal_y = random.randint(0, size-1)
-    grid[goal_y][goal_x] = 2
-    return grid
+#def create_grid(size):
+#    grid = np.random.choice([0, 1], (size,size), p=[.1, .9])
+#    goal_x = random.randint(0, size-1)
+#    goal_y = random.randint(0, size-1)
+#    grid[goal_y][goal_x] = 2
+#    return grid
 
-grid = create_grid(size)
+#grid = create_grid(size)
+grid = np.array([[1, 1, 1, 1],
+                 [1, 0, 1, 0],
+                 [1, 1, 1, 0],
+                 [0, 1, 1, 2]])
+
 actions = ['up', 'down', 'left', 'right']
 q_table = np.zeros((size*size,4))
 max_epsilon = 1.0  # Exploration probability at start
 min_epsilon = 0.05  # Minimum exploration probability
-decay_rate = 0.0125  # Exponential decay rate for exploration prob
+decay_rate = 0.0005  # Exponential decay rate for exploration prob
 alpha = 0.7
 gamma = 0.95
 
@@ -46,10 +51,10 @@ def draw_rectangles(win, grid):
             pygame.draw.rect(win, color, (i*50, j*50, 48, 48), 0)
         
 def take_action(state, epsilon):
-   if random.random() < epsilon:
-        return random.choice(actions)
-   else:
+   if random.random() > epsilon:
         return actions[np.argmax(q_table[state])]
+   else:
+        return random.choice(actions)
    
 def update_q_table(state, action, reward, next_state):  
     q_table[state][actions.index(action)] += alpha * (reward + gamma * np.max(q_table[next_state]) - q_table[state][actions.index(action)])
@@ -63,13 +68,15 @@ def main():
     episode = 0
     state = 0
     steps = 0
-    max_steps =10
+    max_steps = 99
     wins = 0
-    max_episodes = 500
+    max_episodes = 10000
+    reward = 0
     while run & (episode < max_episodes):
         clock.tick(fps)
         epsilon = get_epsilon(episode)
-        print(epsilon)
+        if episode%1000==0:
+            print(epsilon)
         pygame.display.set_caption(f"Maze Game - Episode {episode}")
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -89,15 +96,6 @@ def main():
             y_pos += 50
         steps += 1
 
-        if steps > max_steps:
-            x_pos = 25
-            y_pos = 25
-            episode += 1
-            steps = 0
-            next_state = 0
-            reward = -1
-            print(f"Episode {episode} finished after {max_steps} steps")
-
         pygame.draw.circle(win, (0, 0, 255), (x_pos, y_pos), 20, 0)
         pygame.display.flip()
         if grid[y_pos//50][x_pos//50] == 0:
@@ -105,19 +103,27 @@ def main():
             y_pos = 25
             episode += 1
             reward = 0
-            next_state = 0          
-        if grid[y_pos//50][x_pos//50] == 2: 
+            next_state = size * (y_pos // 50) + x_pos // 50        
+        elif grid[y_pos//50][x_pos//50] == 2: 
             x_pos = 25
             y_pos = 25
             episode += 1
             reward = 1
-            next_state = 0
+            next_state = size * (y_pos // 50) + x_pos // 50
             wins += 1
             print(f"Episode {episode} finished after {steps} steps")
         else:
             reward = 0
-            next_state = y_pos//50 + x_pos//50
+            next_state = size * (y_pos // 50) + x_pos // 50
+        if steps > max_steps:
+            x_pos = 25
+            y_pos = 25
+            episode += 1
+            steps = 0
+            next_state = size * (y_pos // 50) + x_pos // 50
+            print(f"Episode {episode} finished after {max_steps} steps")
         update_q_table(state, action, reward, next_state)
+        #print(q_table)
         state = next_state  
                         
     pygame.quit()
