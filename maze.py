@@ -102,7 +102,7 @@ def main():
             x_pos = 25
             y_pos = 25
             episode += 1
-            reward = 0
+            reward = -1
             next_state = size * (y_pos // 50) + x_pos // 50        
         elif grid[y_pos//50][x_pos//50] == 2: 
             x_pos = 25
